@@ -2,46 +2,43 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from .vendor_urls import enrich_suggestion_urls
+
 BASE_SUGGESTIONS = [
     {
         "restaurant_name": "A2B",
         "menu_items": ["Mini Meals", "Curd Rice"],
-        "order_url": "https://www.zomato.com/chennai/a2b/order",
         "app_name": "Zomato",
         "confidence": 0.92,
-        "notes": "Popular around current location",
+        "notes": "Opens vendor search — pick the correct outlet in the app",
     },
     {
         "restaurant_name": "Saravana Bhavan",
         "menu_items": ["Idli Sambar", "Pongal"],
-        "order_url": "https://www.swiggy.com/city/chennai/saravana-bhavan/order",
         "app_name": "Swiggy",
         "confidence": 0.88,
-        "notes": "Strong vegetarian breakfast options",
+        "notes": "Opens vendor search — pick the correct outlet in the app",
     },
     {
         "restaurant_name": "Sangeetha Veg",
         "menu_items": ["Lemon Rice Combo", "Bisibele Bath"],
-        "order_url": "https://www.zomato.com/chennai/sangeetha/order",
         "app_name": "Zomato",
         "confidence": 0.84,
-        "notes": "Good daytime meal options",
+        "notes": "Opens vendor search — pick the correct outlet in the app",
     },
     {
         "restaurant_name": "Ratna Cafe",
         "menu_items": ["Filter Coffee", "Ghee Roast Dosa"],
-        "order_url": "https://www.swiggy.com/city/chennai/ratna-cafe/order",
         "app_name": "Swiggy",
         "confidence": 0.81,
-        "notes": "Classic South Indian breakfast",
+        "notes": "Opens vendor search — pick the correct outlet in the app",
     },
     {
         "restaurant_name": "Murugan Idli Shop",
         "menu_items": ["Podi Idli", "Sambar Vada"],
-        "order_url": "https://www.zomato.com/chennai/murugan-idli/order",
         "app_name": "Zomato",
         "confidence": 0.79,
-        "notes": "Quick idli-focused orders",
+        "notes": "Opens vendor search — pick the correct outlet in the app",
     },
 ]
 
@@ -75,7 +72,8 @@ def _rank_suggestions(query_text: str) -> list[dict]:
 
 def build_suggest_vendors_response(payload: dict) -> dict:
     query = str(payload.get("query_text") or "").strip()
-    suggestions = _rank_suggestions(query) if query else BASE_SUGGESTIONS[:5]
+    ranked = _rank_suggestions(query) if query else BASE_SUGGESTIONS[:5]
+    suggestions = enrich_suggestion_urls(ranked, payload)
     return {
         "suggestions": suggestions,
         "generated_at": datetime.now(timezone.utc).isoformat(),
