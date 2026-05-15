@@ -22,13 +22,27 @@ Protect internal routes with `X-Internal-Token` when `AI_ORCHESTRATION_INTERNAL_
 
 Requires **Python 3.7+** (3.10+ recommended for production deploy). Docker image uses Python 3.12.
 
-```bash
+**Use a project virtualenv on Windows** — do not `pip install` into Anaconda’s global `ProgramData` folder (you may see `WinError 5 Access is denied` when upgrading `pytest`). The API server only needs `fastapi` + `uvicorn`; those errors during `pytest` install do not block `uvicorn` if they are already present.
+
+```powershell
+cd D:\kannan\sharingbridge\sharingbridge-ai-orchestration
+
 python -m venv .venv
-.venv\Scripts\activate   # Windows
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-set PORT=8091
+
+$env:PORT = "8091"
 uvicorn app.main:app --host 0.0.0.0 --port 8091
 ```
+
+Verify (second terminal):
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8091/health
+# Expect: ok=True, service=ai-orchestration
+```
+
+Leave that window open while integration-service runs with `AI_ORCHESTRATION_BASE_URL=http://localhost:8091`.
 
 ## Environment
 
@@ -42,9 +56,20 @@ uvicorn app.main:app --host 0.0.0.0 --port 8091
 
 ## Tests
 
-```bash
-pytest
+With the venv activated:
+
+```powershell
+python -m pytest -q
 ```
+
+## Troubleshooting (Windows)
+
+| Symptom | Cause | Fix |
+|---------|--------|-----|
+| `WinError 5` / `Access is denied` on `pip install` | Installing into system Anaconda without admin | Use `.venv` steps above |
+| `pytest-astropy requires pytest-cov` | Unrelated global Anaconda plugin | Ignore if you only run the server; use venv for tests |
+| Red pip errors but `Uvicorn running on http://0.0.0.0:8091` | `fastapi`/`uvicorn` already installed globally | **Server is fine** — open `http://127.0.0.1:8091/health` |
+| `uvicorn` not found | Venv not activated | `.\.venv\Scripts\Activate.ps1` then retry |
 
 ## Coordination docs
 
