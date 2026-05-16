@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI
 
-from .auth import require_internal_token
+from .auth import require_internal_api_key
 from .schemas import (
     InstructionPackRequest,
     InstructionPackResponse,
@@ -25,7 +25,7 @@ def health() -> dict:
 @app.post(
     "/internal/v1/llm/suggest-vendors",
     response_model=SuggestVendorsResponse,
-    dependencies=[Depends(require_internal_token)],
+    dependencies=[Depends(require_internal_api_key)],
 )
 def suggest_vendors(body: SuggestVendorsRequest) -> dict:
     return build_suggest_vendors_response(body.dict())
@@ -34,7 +34,7 @@ def suggest_vendors(body: SuggestVendorsRequest) -> dict:
 @app.post(
     "/internal/v1/llm/instruction-pack",
     response_model=InstructionPackResponse,
-    dependencies=[Depends(require_internal_token)],
+    dependencies=[Depends(require_internal_api_key)],
 )
 def instruction_pack(body: InstructionPackRequest) -> dict:
     payload = body.dict()

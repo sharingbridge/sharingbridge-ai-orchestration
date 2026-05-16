@@ -16,7 +16,7 @@ This service exposes **internal** HTTP routes called by `sharingbridge-integrati
 | `POST` | `/internal/v1/llm/suggest-vendors` | Top vendor/menu suggestions |
 | `POST` | `/internal/v1/llm/instruction-pack` | Delivery instruction narrative |
 
-Protect internal routes with `X-Internal-Token` when `AI_ORCHESTRATION_INTERNAL_TOKEN` is set.
+Protect internal routes with `X-Internal-Api-Key` when `AI_ORCHESTRATION_INTERNAL_API_KEY` is set (static service key, not a user JWT).
 
 ## Run locally
 
@@ -49,7 +49,7 @@ Leave that window open while integration-service runs with `AI_ORCHESTRATION_BAS
 | Variable | Description |
 |----------|-------------|
 | `PORT` | Listen port (default `8091`) |
-| `AI_ORCHESTRATION_INTERNAL_TOKEN` | Shared secret with integration-service |
+| `AI_ORCHESTRATION_INTERNAL_API_KEY` | Static API key shared with integration-service |
 | `AI_LLM_MODE` | `deterministic` (default) or `openai` (future) |
 | `OPENAI_API_KEY` | Required only when using OpenAI mode |
 | `SHARINGBRIDGE_WEBSITE_URL` | Courier instruction text only (not an API URL). Use `pending` until you have a real site, then `https://…`. |
@@ -75,7 +75,7 @@ python -m pytest -q
 
 - **Docker** web service (`Dockerfile` + `start.sh`).
 - **Leave Start Command blank** on Render (use the image CMD only).
-- Set `AI_ORCHESTRATION_INTERNAL_TOKEN` to match integration-service.
+- Set `AI_ORCHESTRATION_INTERNAL_API_KEY` to match integration-service.
 - Set `SHARINGBRIDGE_WEBSITE_URL=pending` until you have a real public site.
 - Guide: [DEPLOY_RENDER.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/DEPLOY_RENDER.md).
 

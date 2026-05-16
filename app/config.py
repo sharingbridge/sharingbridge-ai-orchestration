@@ -10,7 +10,9 @@ def env_bool(name: str, default: bool = False) -> bool:
 
 class Settings:
     def __init__(self) -> None:
-        self.internal_token = os.getenv("AI_ORCHESTRATION_INTERNAL_TOKEN", "").strip()
+        self.internal_api_key = os.getenv(
+            "AI_ORCHESTRATION_INTERNAL_API_KEY", ""
+        ).strip()
         self.llm_mode = os.getenv("AI_LLM_MODE", "deterministic").strip().lower()
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.openai_model = os.getenv("AI_LLM_MODEL", "gpt-4o-mini").strip()
