@@ -11,6 +11,5 @@ services:
         value: deterministic
       - key: AI_ORCHESTRATION_INTERNAL_TOKEN
         value: ""
-      # Placeholder for instruction-pack copy (not an API URL)
       - key: SHARINGBRIDGE_WEBSITE_URL
-        value: https://sharingbridge.org
+        value: pending

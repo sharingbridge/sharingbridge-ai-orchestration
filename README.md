@@ -52,7 +52,7 @@ Leave that window open while integration-service runs with `AI_ORCHESTRATION_BAS
 | `AI_ORCHESTRATION_INTERNAL_TOKEN` | Shared secret with integration-service |
 | `AI_LLM_MODE` | `deterministic` (default) or `openai` (future) |
 | `OPENAI_API_KEY` | Required only when using OpenAI mode |
-| `SHARINGBRIDGE_WEBSITE_URL` | **Placeholder** public link only — inserted into courier instruction text (not an API/base URL). Default `https://sharingbridge.org` until you set a real site. |
+| `SHARINGBRIDGE_WEBSITE_URL` | Courier instruction text only (not an API URL). Use `pending` until you have a real site, then `https://…`. |
 
 ## Tests
 

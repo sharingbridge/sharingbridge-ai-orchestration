@@ -14,11 +14,8 @@ class Settings:
         self.llm_mode = os.getenv("AI_LLM_MODE", "deterministic").strip().lower()
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.openai_model = os.getenv("AI_LLM_MODEL", "gpt-4o-mini").strip()
-        # Placeholder link embedded in courier-facing instruction text (not used for HTTP routing).
-        self.website_url = os.getenv(
-            "SHARINGBRIDGE_WEBSITE_URL",
-            "https://sharingbridge.org",  # default placeholder until a real site is set
-        ).strip()
+        # Courier instruction text only — use "pending" until a real https URL exists.
+        self.website_url = os.getenv("SHARINGBRIDGE_WEBSITE_URL", "pending").strip()
 
 
 settings = Settings()

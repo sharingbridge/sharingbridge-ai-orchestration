@@ -4,11 +4,11 @@ import uuid
 from datetime import datetime, timezone
 
 from ..config import settings
+from .program_reference import program_intro_line
 from .text_sanitize import sanitize_handover_notes
 
 
 def build_instruction_pack_response(payload: dict) -> dict:
-    website = settings.website_url
     verbal = sanitize_handover_notes((payload.get("verbal_handover_notes") or "").strip())
     has_photo = bool(payload.get("has_reference_photo"))
     photo_id = payload.get("reference_photo_artifact_id")
@@ -31,7 +31,7 @@ def build_instruction_pack_response(payload: dict) -> dict:
             photo_line = "Reference photo: available to delivery partner per app policy."
 
     lines = [
-        f"This meal was arranged through SharingBridge ({website}) for handover to the recipient.",
+        program_intro_line(settings.website_url),
         "",
         photo_line,
         geo_line,
