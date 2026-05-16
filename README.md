@@ -71,6 +71,12 @@ python -m pytest -q
 | Red pip errors but `Uvicorn running on http://0.0.0.0:8091` | `fastapi`/`uvicorn` already installed globally | **Server is fine** — open `http://127.0.0.1:8091/health` |
 | `uvicorn` not found | Venv not activated | `.\.venv\Scripts\Activate.ps1` then retry |
 
+## Deploy (Render)
+
+- **Docker** web service (`Dockerfile` + `render.yaml`).
+- Set `AI_ORCHESTRATION_INTERNAL_TOKEN` to match integration-service.
+- Guide: [DEPLOY_RENDER.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/DEPLOY_RENDER.md).
+
 ## Coordination docs
 
 - [AI_PLATFORM_INTEGRATION.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/AI_PLATFORM_INTEGRATION.md)

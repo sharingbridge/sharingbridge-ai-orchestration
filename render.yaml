@@ -1,0 +1,15 @@
+# Render Blueprint — Docker web service
+services:
+  - type: web
+    name: sharingbridge-ai-orchestration
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: AI_LLM_MODE
+        value: deterministic
+      - key: AI_ORCHESTRATION_INTERNAL_TOKEN
+        value: ""
+      - key: SHARINGBRIDGE_WEBSITE_URL
+        value: https://sharingbridge.org
