@@ -1,4 +1,5 @@
-# Render Blueprint — Docker web service
+# Render Blueprint — Docker; Start Command must stay blank (uses start.sh).
+# Guide: https://github.com/sharingbridge/sharingbridge/blob/main/configuration/backend-render.md
 services:
   - type: web
     name: sharingbridge-ai-orchestration

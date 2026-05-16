@@ -77,7 +77,7 @@ python -m pytest -q
 - **Leave Start Command blank** on Render (use the image CMD only).
 - Set `AI_ORCHESTRATION_INTERNAL_API_KEY` to match integration-service.
 - Set `SHARINGBRIDGE_WEBSITE_URL=pending` until you have a real public site.
-- Guide: [DEPLOY_RENDER.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/DEPLOY_RENDER.md).
+- [configuration/backend-render.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/backend-render.md)
 
 ## Coordination docs
 
