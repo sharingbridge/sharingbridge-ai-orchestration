@@ -73,8 +73,10 @@ python -m pytest -q
 
 ## Deploy (Render)
 
-- **Docker** web service (`Dockerfile` + `render.yaml`).
+- **Docker** web service (`Dockerfile` + `start.sh`).
+- **Leave Start Command blank** on Render (use the image CMD only).
 - Set `AI_ORCHESTRATION_INTERNAL_TOKEN` to match integration-service.
+- Set `SHARINGBRIDGE_WEBSITE_URL=pending` until you have a real public site.
 - Guide: [DEPLOY_RENDER.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/DEPLOY_RENDER.md).
 
 ## Coordination docs
