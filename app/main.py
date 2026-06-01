@@ -28,7 +28,7 @@ def health() -> dict:
     dependencies=[Depends(require_internal_api_key)],
 )
 def suggest_vendors(body: SuggestVendorsRequest) -> dict:
-    return build_suggest_vendors_response(body.dict())
+    return build_suggest_vendors_response(body.model_dump())
 
 
 @app.post(
@@ -37,6 +37,6 @@ def suggest_vendors(body: SuggestVendorsRequest) -> dict:
     dependencies=[Depends(require_internal_api_key)],
 )
 def instruction_pack(body: InstructionPackRequest) -> dict:
-    payload = body.dict()
-    payload["presets"] = [p.dict() for p in body.presets]
+    payload = body.model_dump()
+    payload["presets"] = [p.model_dump() for p in body.presets]
     return build_instruction_pack_response(payload)
