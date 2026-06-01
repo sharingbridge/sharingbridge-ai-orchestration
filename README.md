@@ -20,16 +20,16 @@ Protect internal routes with `X-Internal-Api-Key` when `AI_ORCHESTRATION_INTERNA
 
 ## Run locally
 
-Requires **Python 3.7+** (3.10+ recommended for production deploy). Docker image uses Python 3.12.
+Requires **Python 3.10+** (3.13 works for local dev). Docker image uses Python 3.12. Use `python3.13` — not Anaconda’s default `python` (often 3.7).
 
 **Use a project virtualenv on Windows** — create `.venv` **in this repo only** (not `D:\kannan\sharingbridge\.venv`). Do not `pip install` into Anaconda’s global `ProgramData` folder (you may see `WinError 5 Access is denied` when upgrading `pytest`).
 
-**Uvicorn** is the Python HTTP server for this app (like `npm start` for Node). **`Activate.ps1`** is generated under `.venv\Scripts\` when you run `python -m venv .venv`; it is gitignored and not part of [configuration](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/README.md). See [ai-orchestration-local.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/ai-orchestration-local.md).
+**Uvicorn** is the Python HTTP server for this app (like `npm start` for Node). **`Activate.ps1`** is generated under `.venv\Scripts\` when you run `python3.13 -m venv .venv`; it is gitignored. See [ai-orchestration-local.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/ai-orchestration-local.md).
 
 ```powershell
 cd D:\kannan\sharingbridge\sharingbridge-ai-orchestration
 
-python -m venv .venv
+python3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
@@ -72,7 +72,8 @@ python -m pytest -q
 | `pytest-astropy requires pytest-cov` | Unrelated global Anaconda plugin | Ignore if you only run the server; use venv for tests |
 | Red pip errors but `Uvicorn running on http://0.0.0.0:8091` | `fastapi`/`uvicorn` already installed globally | **Server is fine** — open `http://127.0.0.1:8091/health` |
 | `uvicorn` not found | Venv not activated or wrong folder | `cd` this repo, `.\.venv\Scripts\Activate.ps1`, or `.\.venv\Scripts\python.exe -m uvicorn ...` |
-| Empty `Activate.ps1` | Broken venv (often created in parent folder) | Delete `.venv` here, run `python -m venv .venv` again in **this** repo |
+| Empty `Activate.ps1` | Broken venv (often created in parent folder) | Delete `.venv` here, run `python3.13 -m venv .venv` again in **this** repo |
+| `ForwardRef._evaluate() … recursive_guard` on `uvicorn` | Pydantic v1 + Python 3.13 | `git pull`, delete `.venv`, `python3.13 -m venv .venv`, `pip install -r requirements.txt` |
 
 ## Deploy (Render)
 
