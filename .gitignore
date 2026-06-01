@@ -3,3 +3,5 @@ __pycache__/
 .pytest_cache/
 .env
 *.pyc
+# Environment (never commit secrets) — copy env.example to .env locally
+.env*
