@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 import os
 
 import httpx
+
+logger = logging.getLogger("ai-orchestration")
 
 
 def reverse_geocode(lat: float, lng: float) -> str | None:
@@ -30,6 +33,10 @@ def reverse_geocode(lat: float, lng: float) -> str | None:
             headers={"User-Agent": user_agent},
         )
     if response.status_code >= 400:
+        if response.status_code == 429:
+            logger.warning(
+                "[nominatim] rate limited (HTTP 429); using coordinate fallback"
+            )
         return None
 
     data = response.json()
