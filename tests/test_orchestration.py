@@ -10,7 +10,11 @@ client = TestClient(app)
 def test_health():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["service"] == "ai-orchestration"
+    body = response.json()
+    assert body["service"] == "ai-orchestration"
+    assert "config" in body
+    assert "llm_mode" in body["config"]
+    assert "groq_configured" in body["config"]
 
 
 def test_vendor_search_urls():
