@@ -6,7 +6,9 @@
 
 This service exposes **internal** HTTP routes called by `sharingbridge-integration-service`. Mobile apps never call it directly.
 
-**MVP behavior:** `AI_LLM_MODE=deterministic` (default) returns query-ranked vendor suggestions and policy-aligned instruction packs without calling a model provider. Set `OPENAI_API_KEY` and `AI_LLM_MODE=openai` when you are ready to add a real LLM pass (LangChain wiring is planned; deterministic mode keeps CI free of live API keys).
+**MVP behavior:** `AI_LLM_MODE=deterministic` (default) returns query-ranked vendor suggestions and policy-aligned instruction packs without calling a model provider.
+
+**Live LLM (planned):** `AI_LLM_MODE=live` with a **split provider** design — **Gemini** for reference-photo vision (`image_description`, seeker appearance) and **Groq** for text (`suggest-vendors`, instruction compose). See [AI_IMPLEMENTATION_PLAN.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/AI_IMPLEMENTATION_PLAN.md) § *Provider split*.
 
 ## Endpoints
 
