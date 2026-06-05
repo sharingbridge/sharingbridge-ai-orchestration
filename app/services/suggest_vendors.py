@@ -71,6 +71,16 @@ def _rank_suggestions(query_text: str) -> list[dict]:
 
 
 def build_suggest_vendors_response(payload: dict) -> dict:
+    from ..config import settings
+
+    if settings.live_llm_enabled():
+        try:
+            from .suggest_vendors_live import build_groq_suggest_vendors_response
+
+            return build_groq_suggest_vendors_response(payload)
+        except Exception:
+            pass
+
     query = str(payload.get("query_text") or "").strip()
     ranked = _rank_suggestions(query) if query else BASE_SUGGESTIONS[:5]
     suggestions = enrich_suggestion_urls(ranked, payload)

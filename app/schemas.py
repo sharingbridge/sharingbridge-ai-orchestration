@@ -29,6 +29,8 @@ class InstructionPackRequest(BaseModel):
     verbal_handover_notes: Optional[str] = None
     has_reference_photo: bool = False
     reference_photo_artifact_id: Optional[str] = None
+    reference_photo_view_url: Optional[str] = None
+    reference_photo_thumbnail_url: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
     location_label: Optional[str] = None
@@ -46,3 +48,7 @@ class InstructionPackResponse(BaseModel):
     donor_display_name: Optional[str] = None
     seeker_display_name: Optional[str] = None
     secure_photo_url: Optional[str] = None
+    location_description: Optional[str] = None
+    image_description: Optional[str] = None
+    seeker_appearance_hints: Optional[str] = None
+    seeker_handover_hints: Optional[str] = None

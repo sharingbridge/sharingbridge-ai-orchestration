@@ -9,6 +9,18 @@ from .text_sanitize import sanitize_handover_notes
 
 
 def build_instruction_pack_response(payload: dict) -> dict:
+    if settings.live_llm_enabled():
+        try:
+            from .instruction_pack_live import build_live_instruction_pack_response
+
+            return build_live_instruction_pack_response(payload)
+        except Exception:
+            pass
+
+    return _build_deterministic_instruction_pack(payload)
+
+
+def _build_deterministic_instruction_pack(payload: dict) -> dict:
     verbal = sanitize_handover_notes((payload.get("verbal_handover_notes") or "").strip())
     has_photo = bool(payload.get("has_reference_photo"))
     photo_id = payload.get("reference_photo_artifact_id")
