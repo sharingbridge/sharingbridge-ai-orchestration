@@ -98,9 +98,13 @@ class GeminiVisionClient:
             )
 
         if response.status_code >= 400:
-            raise GeminiClientError(
-                f"Gemini HTTP {response.status_code}: {response.text[:500]}"
-            )
+            detail = response.text[:500]
+            if response.status_code == 404 and "gemini-2.0-flash" in self.model:
+                detail += (
+                    " — gemini-2.0-flash was shut down June 2026; "
+                    "set GEMINI_VISION_MODEL=gemini-2.5-flash (or gemini-3.5-flash)"
+                )
+            raise GeminiClientError(f"Gemini HTTP {response.status_code}: {detail}")
 
         data = response.json()
         text = _extract_gemini_text(data)

@@ -25,7 +25,7 @@ class Settings:
         # Gemini — vision: image + seeker appearance hints
         self.gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
         self.gemini_vision_model = os.getenv(
-            "GEMINI_VISION_MODEL", "gemini-2.0-flash"
+            "GEMINI_VISION_MODEL", "gemini-2.5-flash"
         ).strip()
         self.photo_service_base_url = os.getenv(
             "PHOTO_SERVICE_BASE_URL", ""

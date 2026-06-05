@@ -47,6 +47,12 @@ def _startup_config_issues(config: dict) -> list[str]:
         issues.append("AI_LLM_MODE=live but GROQ_API_KEY is missing")
     if config.get("llm_mode") == "live" and not config.get("gemini_configured"):
         issues.append("AI_LLM_MODE=live but GEMINI_API_KEY is missing")
+    vision_model = str(config.get("gemini_vision_model") or "")
+    if vision_model.startswith("gemini-2.0-flash"):
+        issues.append(
+            "GEMINI_VISION_MODEL is shut down (June 2026); "
+            "set gemini-2.5-flash or gemini-3.5-flash"
+        )
     return issues
 
 
