@@ -8,7 +8,7 @@ This service exposes **internal** HTTP routes called by `sharingbridge-integrati
 
 **MVP behavior:** `AI_LLM_MODE=deterministic` (default) returns query-ranked vendor suggestions and policy-aligned instruction packs without calling a model provider.
 
-**Live LLM (planned):** `AI_LLM_MODE=live` with a **split provider** design — **Gemini** for reference-photo vision (`image_description`, seeker appearance) and **Groq** for text (`suggest-vendors`, instruction compose). See [AI_IMPLEMENTATION_PLAN.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/AI_IMPLEMENTATION_PLAN.md) § *Provider split*.
+**Live LLM:** `AI_LLM_MODE=live` with **Gemini** (reference-photo vision) and **Groq** (text). See [ai-setup-handhold.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/ai-setup-handhold.md).
 
 ## Endpoints
 
@@ -54,9 +54,13 @@ Leave that window open while integration-service runs with `AI_ORCHESTRATION_BAS
 |----------|-------------|
 | `PORT` | Listen port (default `8091`) |
 | `AI_ORCHESTRATION_INTERNAL_API_KEY` | Static API key shared with integration-service |
-| `AI_LLM_MODE` | `deterministic` (default) or `openai` (future) |
-| `OPENAI_API_KEY` | Required only when using OpenAI mode |
+| `AI_LLM_MODE` | `deterministic` (default) or `live` |
+| `GROQ_API_KEY` / `GROQ_MODEL` | Text: suggest-vendors + instruction compose |
+| `GEMINI_API_KEY` / `GEMINI_VISION_MODEL` | Vision: reference photo (`gemini-2.5-flash`) |
+| `NOMINATIM_USER_AGENT` | Reverse geocode User-Agent (no API key) |
 | `SHARINGBRIDGE_WEBSITE_URL` | Courier instruction text only (not an API URL). Use `pending` until you have a real site, then `https://…`. |
+
+Copy `env.example` to `.env` for local overrides.
 
 ## Tests
 

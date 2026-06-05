@@ -30,9 +30,6 @@ class Settings:
         self.photo_service_base_url = os.getenv(
             "PHOTO_SERVICE_BASE_URL", ""
         ).strip().rstrip("/")
-        # Legacy OpenAI path (optional; not used in Gemini+Groq split)
-        self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
-        self.openai_model = os.getenv("AI_LLM_MODEL", "gpt-4o-mini").strip()
         # Courier instruction text only — use "pending" until a real https URL exists.
         self.website_url = os.getenv("SHARINGBRIDGE_WEBSITE_URL", "pending").strip()
 
