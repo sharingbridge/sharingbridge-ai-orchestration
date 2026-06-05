@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
 from ..config import settings
+from ..service_log import log_warn
 from .program_reference import program_intro_line
 from .text_sanitize import sanitize_handover_notes
+
+logger = logging.getLogger("ai-orchestration")
 
 
 def build_instruction_pack_response(payload: dict) -> dict:
@@ -14,8 +18,12 @@ def build_instruction_pack_response(payload: dict) -> dict:
             from .instruction_pack_live import build_live_instruction_pack_response
 
             return build_live_instruction_pack_response(payload)
-        except Exception:
-            pass
+        except Exception as exc:
+            log_warn(
+                logger,
+                "[instruction-pack] live path failed, using deterministic fallback: %s",
+                exc,
+            )
 
     return _build_deterministic_instruction_pack(payload)
 

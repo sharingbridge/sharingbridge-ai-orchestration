@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timezone
-
 import logging
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 
 from ..config import settings
 from ..geo.reverse_geocode import reverse_geocode
@@ -89,34 +89,47 @@ def build_live_instruction_pack_response(payload: dict) -> dict:
     seeker = (payload.get("seeker_display_name") or "the person receiving help").strip()
     has_photo = bool(payload.get("has_reference_photo"))
 
-    location_description = ""
-    if lat is not None and lng is not None:
-        geocoded = reverse_geocode(lat, lng)
-        coord = f"{lat}, {lng}"
-        if location_label:
-            coord += f" ({location_label})"
-        location_description = geocoded or f"Coordinates {coord}"
-
     image_description = ""
     seeker_appearance_hints = ""
     photo_urls = _photo_urls_from_payload(payload)
     photo_url = photo_urls[0] if photo_urls else ""
 
-    if has_photo:
-        if not photo_urls:
-            log_warn(
-                logger,
-                "[instruction-pack-live] has_reference_photo=true but no photo URL in request",
-            )
-        elif not settings.gemini_configured():
-            log_warn(
-                logger,
-                "[instruction-pack-live] GEMINI_API_KEY missing — skipping vision "
-                "(set GEMINI_API_KEY on ai-orchestration for seeker_appearance_hints)",
-            )
-        else:
+    location_description = ""
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        geo_future = None
+        if lat is not None and lng is not None:
+            geo_future = pool.submit(reverse_geocode, lat, lng)
+
+        vision_future = None
+        if has_photo:
+            if not photo_urls:
+                log_warn(
+                    logger,
+                    "[instruction-pack-live] has_reference_photo=true but no photo URL in request",
+                )
+            elif not settings.gemini_configured():
+                log_warn(
+                    logger,
+                    "[instruction-pack-live] GEMINI_API_KEY missing — skipping vision "
+                    "(set GEMINI_API_KEY on ai-orchestration for seeker_appearance_hints)",
+                )
+            else:
+                vision_future = pool.submit(
+                    _run_gemini_vision,
+                    photo_urls=photo_urls,
+                    verbal=verbal,
+                )
+
+        if geo_future is not None:
+            geocoded = geo_future.result()
+            coord = f"{lat}, {lng}"
+            if location_label:
+                coord += f" ({location_label})"
+            location_description = geocoded or f"Coordinates {coord}"
+
+        if vision_future is not None:
             try:
-                vision = _run_gemini_vision(photo_urls=photo_urls, verbal=verbal)
+                vision = vision_future.result()
                 image_description = vision.get("image_description", "")
                 seeker_appearance_hints = vision.get("seeker_appearance_hints", "")
             except GeminiClientError as exc:
