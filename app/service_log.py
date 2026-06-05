@@ -54,3 +54,7 @@ def log_startup_from_issues(
         logger.warning("[startup] config issues: %s", json.dumps(issues))
     elif should_log_info(env):
         logger.info("[startup] config %s", json.dumps(config))
+
+
+def log_warn(logger: logging.Logger, message: str, *args: Any) -> None:
+    logger.warning(message, *args)

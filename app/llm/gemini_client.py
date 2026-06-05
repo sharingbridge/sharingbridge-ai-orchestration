@@ -22,6 +22,14 @@ Rules:
 - Keep each field under 120 words.
 Return JSON only: {"image_description": "...", "seeker_appearance_hints": "..."}"""
 
+# Handover photos are consent-based; relax defaults to reduce false SAFETY blocks.
+VISION_SAFETY_SETTINGS = [
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+]
+
 
 class GeminiVisionClient:
     def __init__(
@@ -79,6 +87,7 @@ class GeminiVisionClient:
                 "temperature": 0.2,
                 "responseMimeType": "application/json",
             },
+            "safetySettings": VISION_SAFETY_SETTINGS,
         }
 
         with httpx.Client(timeout=self.timeout_s) as client:
@@ -127,10 +136,30 @@ def _fetch_image(url: str, timeout_s: float) -> tuple[bytes, str]:
 
 
 def _extract_gemini_text(data: dict[str, Any]) -> str:
+    prompt_feedback = data.get("promptFeedback") or {}
+    block_reason = prompt_feedback.get("blockReason")
+    if block_reason:
+        raise GeminiClientError(f"Gemini blocked prompt: {block_reason}")
+
     candidates = data.get("candidates") or []
     if not candidates:
         raise GeminiClientError("Gemini returned no candidates")
-    parts = (candidates[0].get("content") or {}).get("parts") or []
+
+    first = candidates[0]
+    finish_reason = first.get("finishReason")
+    if finish_reason and finish_reason not in {"STOP", "MAX_TOKENS"}:
+        ratings = first.get("safetyRatings") or []
+        blocked = [
+            r.get("category")
+            for r in ratings
+            if isinstance(r, dict) and r.get("blocked")
+        ]
+        detail = f" finishReason={finish_reason}"
+        if blocked:
+            detail += f" blocked={blocked}"
+        raise GeminiClientError(f"Gemini response blocked:{detail}")
+
+    parts = (first.get("content") or {}).get("parts") or []
     chunks: list[str] = []
     for part in parts:
         text = part.get("text")

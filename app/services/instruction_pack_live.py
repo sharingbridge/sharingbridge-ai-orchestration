@@ -3,12 +3,17 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
+import logging
+
 from ..config import settings
 from ..geo.reverse_geocode import reverse_geocode
 from ..llm.gemini_client import GeminiClientError, GeminiVisionClient
 from ..llm.groq_client import GroqClient, GroqClientError
+from ..service_log import log_warn
 from .program_reference import program_intro_line
 from .text_sanitize import sanitize_handover_notes
+
+logger = logging.getLogger("ai-orchestration")
 
 COMPOSE_SYSTEM = """You write courier-facing meal handover instructions for SharingBridge.
 Return JSON only:
@@ -30,15 +35,49 @@ Rules for delivery_instructions:
 """
 
 
-def _photo_url_from_payload(payload: dict) -> str:
+def _photo_urls_from_payload(payload: dict) -> list[str]:
+    urls: list[str] = []
     for key in (
-        "reference_photo_thumbnail_url",
         "reference_photo_view_url",
+        "reference_photo_thumbnail_url",
     ):
         value = payload.get(key)
-        if isinstance(value, str) and value.strip().startswith("http"):
-            return value.strip()
-    return ""
+        if isinstance(value, str):
+            normalized = value.strip()
+            if normalized.startswith("http") and normalized not in urls:
+                urls.append(normalized)
+    return urls
+
+
+def _photo_url_from_payload(payload: dict) -> str:
+    urls = _photo_urls_from_payload(payload)
+    return urls[0] if urls else ""
+
+
+def _run_gemini_vision(
+    *,
+    photo_urls: list[str],
+    verbal: str,
+) -> dict[str, str]:
+    client = GeminiVisionClient()
+    last_error: GeminiClientError | None = None
+    for photo_url in photo_urls:
+        try:
+            return client.describe_reference_photo(
+                image_url=photo_url,
+                verbal_notes=verbal,
+            )
+        except GeminiClientError as exc:
+            last_error = exc
+            log_warn(
+                logger,
+                "[instruction-pack-live] gemini vision failed for %s: %s",
+                photo_url[:120],
+                exc,
+            )
+    if last_error is not None:
+        raise last_error
+    raise GeminiClientError("no photo URLs to analyze")
 
 
 def build_live_instruction_pack_response(payload: dict) -> dict:
@@ -60,18 +99,32 @@ def build_live_instruction_pack_response(payload: dict) -> dict:
 
     image_description = ""
     seeker_appearance_hints = ""
-    photo_url = _photo_url_from_payload(payload)
+    photo_urls = _photo_urls_from_payload(payload)
+    photo_url = photo_urls[0] if photo_urls else ""
 
-    if has_photo and photo_url and settings.gemini_configured():
-        try:
-            vision = GeminiVisionClient().describe_reference_photo(
-                image_url=photo_url,
-                verbal_notes=verbal,
+    if has_photo:
+        if not photo_urls:
+            log_warn(
+                logger,
+                "[instruction-pack-live] has_reference_photo=true but no photo URL in request",
             )
-            image_description = vision.get("image_description", "")
-            seeker_appearance_hints = vision.get("seeker_appearance_hints", "")
-        except GeminiClientError:
-            pass
+        elif not settings.gemini_configured():
+            log_warn(
+                logger,
+                "[instruction-pack-live] GEMINI_API_KEY missing — skipping vision "
+                "(set GEMINI_API_KEY on ai-orchestration for seeker_appearance_hints)",
+            )
+        else:
+            try:
+                vision = _run_gemini_vision(photo_urls=photo_urls, verbal=verbal)
+                image_description = vision.get("image_description", "")
+                seeker_appearance_hints = vision.get("seeker_appearance_hints", "")
+            except GeminiClientError as exc:
+                log_warn(
+                    logger,
+                    "[instruction-pack-live] gemini vision skipped after retries: %s",
+                    exc,
+                )
 
     program_intro = program_intro_line(settings.website_url)
 
@@ -106,7 +159,11 @@ def build_live_instruction_pack_response(payload: dict) -> dict:
         "pack_id": pack_id,
         "delivery_instructions": delivery,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source": "groq+gemini" if image_description else "groq",
+        "source": (
+            "groq+gemini"
+            if image_description or seeker_appearance_hints
+            else "groq"
+        ),
         "donor_display_name": donor,
         "seeker_display_name": seeker,
         "secure_photo_url": photo_url or None,
