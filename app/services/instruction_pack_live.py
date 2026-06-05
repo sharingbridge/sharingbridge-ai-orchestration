@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -9,7 +10,7 @@ from ..config import settings
 from ..geo.reverse_geocode import reverse_geocode
 from ..llm.gemini_client import GeminiClientError, GeminiVisionClient
 from ..llm.groq_client import GroqClient, GroqClientError
-from ..service_log import log_warn
+from ..service_log import log_info, log_warn
 from .program_reference import program_intro_line
 from .text_sanitize import sanitize_handover_notes
 
@@ -38,8 +39,8 @@ Rules for delivery_instructions:
 def _photo_urls_from_payload(payload: dict) -> list[str]:
     urls: list[str] = []
     for key in (
-        "reference_photo_view_url",
         "reference_photo_thumbnail_url",
+        "reference_photo_view_url",
     ):
         value = payload.get(key)
         if isinstance(value, str):
@@ -81,6 +82,7 @@ def _run_gemini_vision(
 
 
 def build_live_instruction_pack_response(payload: dict) -> dict:
+    started = time.perf_counter()
     verbal = sanitize_handover_notes((payload.get("verbal_handover_notes") or "").strip())
     lat = payload.get("lat")
     lng = payload.get("lng")
@@ -168,6 +170,16 @@ def build_live_instruction_pack_response(payload: dict) -> dict:
     ).strip()
 
     pack_id = str(uuid.uuid4())
+    elapsed_ms = int((time.perf_counter() - started) * 1000)
+    vision_used = bool(image_description or seeker_appearance_hints)
+    log_info(
+        logger,
+        "[instruction-pack-live] done in %dms source=%s vision=%s has_photo=%s",
+        elapsed_ms,
+        "groq+gemini" if vision_used else "groq",
+        vision_used,
+        has_photo,
+    )
     return {
         "pack_id": pack_id,
         "delivery_instructions": delivery,

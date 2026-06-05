@@ -8,14 +8,14 @@ from app.services.instruction_pack_live import (
 )
 
 
-def test_photo_urls_prefers_view_url():
+def test_photo_urls_prefers_thumbnail_for_speed():
     payload = {
         "reference_photo_thumbnail_url": "https://cdn.example/thumb.jpg",
         "reference_photo_view_url": "https://cdn.example/view.jpg",
     }
     assert _photo_urls_from_payload(payload) == [
-        "https://cdn.example/view.jpg",
         "https://cdn.example/thumb.jpg",
+        "https://cdn.example/view.jpg",
     ]
 
 

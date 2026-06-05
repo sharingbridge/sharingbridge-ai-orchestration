@@ -1,4 +1,6 @@
 import os
+import time
+import uuid
 
 from fastapi import Depends, FastAPI
 
@@ -10,7 +12,12 @@ from .schemas import (
     SuggestVendorsRequest,
     SuggestVendorsResponse,
 )
-from .service_log import configure_logging, log_startup_from_issues, resolve_log_level
+from .service_log import (
+    configure_logging,
+    log_info,
+    log_startup_from_issues,
+    resolve_log_level,
+)
 from .services.instruction_pack import build_instruction_pack_response
 from .services.suggest_vendors import build_suggest_vendors_response
 
@@ -86,6 +93,23 @@ def suggest_vendors(body: SuggestVendorsRequest) -> dict:
     dependencies=[Depends(require_internal_api_key)],
 )
 def instruction_pack(body: InstructionPackRequest) -> dict:
+    request_id = uuid.uuid4().hex[:8]
+    started = time.perf_counter()
+    log_info(
+        logger,
+        "[instruction-pack] %s start has_photo=%s",
+        request_id,
+        body.has_reference_photo,
+    )
     payload = body.model_dump()
     payload["presets"] = [p.model_dump() for p in body.presets]
-    return build_instruction_pack_response(payload)
+    result = build_instruction_pack_response(payload)
+    elapsed_ms = int((time.perf_counter() - started) * 1000)
+    log_info(
+        logger,
+        "[instruction-pack] %s done in %dms source=%s",
+        request_id,
+        elapsed_ms,
+        result.get("source"),
+    )
+    return result

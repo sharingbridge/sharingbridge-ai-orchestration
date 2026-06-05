@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 import httpx
 
 from ..config import settings
+from ..service_log import log_info
 from .json_utils import parse_json_object
+
+logger = logging.getLogger("ai-orchestration")
 
 
 class GroqClientError(Exception):
@@ -52,6 +56,7 @@ class GroqClient:
         if json_mode:
             body["response_format"] = {"type": "json_object"}
 
+        log_info(logger, "[groq] chat request model=%s json=%s", self.model, json_mode)
         with httpx.Client(timeout=self.timeout_s) as client:
             response = client.post(
                 f"{self.base_url}/chat/completions",

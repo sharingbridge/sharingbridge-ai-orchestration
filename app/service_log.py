@@ -29,6 +29,12 @@ def resolve_log_level(env: dict[str, str] | None = None) -> str:
     return raw if raw in LEVEL_RANK else "warn"
 
 
+def quiet_noisy_http_loggers() -> None:
+    """Keep httpx/httpcore from logging full URLs (Gemini keys in query strings)."""
+    for name in ("httpx", "httpcore", "urllib3"):
+        logging.getLogger(name).setLevel(logging.WARNING)
+
+
 def configure_logging(logger_name: str = "sharingbridge") -> logging.Logger:
     level_name = resolve_log_level()
     logging.basicConfig(
@@ -36,7 +42,13 @@ def configure_logging(logger_name: str = "sharingbridge") -> logging.Logger:
         format="%(message)s",
         force=True,
     )
+    quiet_noisy_http_loggers()
     return logging.getLogger(logger_name)
+
+
+def log_info(logger: logging.Logger, message: str, *args: Any) -> None:
+    if should_log_info():
+        logger.info(message, *args)
 
 
 def should_log_info(env: dict[str, str] | None = None) -> bool:

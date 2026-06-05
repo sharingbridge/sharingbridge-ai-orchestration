@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 from typing import Any
 
 import httpx
 
 from ..config import settings
+from ..service_log import log_info
 from .json_utils import parse_json_object
+
+logger = logging.getLogger("ai-orchestration")
 
 
 class GeminiClientError(Exception):
@@ -37,7 +41,7 @@ class GeminiVisionClient:
         *,
         api_key: str | None = None,
         model: str | None = None,
-        timeout_s: float = 60.0,
+        timeout_s: float = 25.0,
     ) -> None:
         self.api_key = (api_key or settings.gemini_api_key).strip()
         self.model = (model or settings.gemini_vision_model).strip()
@@ -90,10 +94,14 @@ class GeminiVisionClient:
             "safetySettings": VISION_SAFETY_SETTINGS,
         }
 
+        log_info(logger, "[gemini] vision request model=%s", self.model)
         with httpx.Client(timeout=self.timeout_s) as client:
             response = client.post(
                 endpoint,
-                params={"key": self.api_key},
+                headers={
+                    "x-goog-api-key": self.api_key,
+                    "Content-Type": "application/json",
+                },
                 json=payload,
             )
 

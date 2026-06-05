@@ -1,4 +1,12 @@
-from app.service_log import log_startup_from_issues, resolve_log_level, should_log_info
+import logging
+
+from app.service_log import (
+    configure_logging,
+    log_startup_from_issues,
+    quiet_noisy_http_loggers,
+    resolve_log_level,
+    should_log_info,
+)
 
 
 def test_resolve_log_level_defaults_to_warn():
@@ -8,6 +16,16 @@ def test_resolve_log_level_defaults_to_warn():
 def test_should_log_info_respects_level():
     assert should_log_info({"LOG_LEVEL": "warn"}) is False
     assert should_log_info({"LOG_LEVEL": "info"}) is True
+
+
+def test_quiet_noisy_http_loggers_sets_httpx_to_warning():
+    quiet_noisy_http_loggers()
+    assert logging.getLogger("httpx").level >= logging.WARNING
+
+
+def test_configure_logging_quiets_httpx():
+    configure_logging("test-quiet-httpx")
+    assert logging.getLogger("httpcore").level >= logging.WARNING
 
 
 def test_log_startup_from_issues_warns_without_info_dump(caplog):
