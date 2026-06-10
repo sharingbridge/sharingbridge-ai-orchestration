@@ -11,7 +11,9 @@ services:
     healthCheckPath: /health
     envVars:
       - key: AI_LLM_MODE
-        value: deterministic
+        value: live
+      - key: LOG_LEVEL
+        value: warn
       - key: AI_ORCHESTRATION_INTERNAL_API_KEY
         value: ""
       - key: SHARINGBRIDGE_WEBSITE_URL

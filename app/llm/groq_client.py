@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
 import httpx
@@ -57,15 +58,20 @@ class GroqClient:
             body["response_format"] = {"type": "json_object"}
 
         log_info(logger, "[groq] chat request model=%s json=%s", self.model, json_mode)
+        response = None
         with httpx.Client(timeout=self.timeout_s) as client:
-            response = client.post(
-                f"{self.base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json=body,
-            )
+            for attempt in range(3):
+                response = client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=body,
+                )
+                if response.status_code != 429 or attempt >= 2:
+                    break
+                time.sleep(2 * (attempt + 1))
 
         if response.status_code >= 400:
             raise GroqClientError(
