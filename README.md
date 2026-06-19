@@ -91,5 +91,6 @@ python -m pytest -q
 
 ## Coordination docs
 
-- [AI_PLATFORM_INTEGRATION.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/AI_PLATFORM_INTEGRATION.md)
-- [IMPLEMENTATION_APPROACH.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/IMPLEMENTATION_APPROACH.md)
+- [AI_AS_BUILT.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/AI_AS_BUILT.md)
+- [AI_PLAN.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/AI_PLAN.md)
+- [STATUS.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/STATUS.md)
