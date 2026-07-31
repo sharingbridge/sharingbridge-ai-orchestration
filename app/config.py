@@ -13,8 +13,8 @@ class Settings:
         self.internal_api_key = os.getenv(
             "AI_ORCHESTRATION_INTERNAL_API_KEY", ""
         ).strip()
-        self.llm_mode = os.getenv("AI_LLM_MODE", "passthrough").strip().lower()
-        # Non-live modes: passthrough (echo/assemble user input). Legacy alias: deterministic.
+        self.llm_mode = os.getenv("AI_LLM_MODE", "live").strip().lower()
+        # Production requires live. passthrough/deterministic no longer serve raw user text.
         # Groq — text: presets + instruction compose
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
         self.groq_model = os.getenv(

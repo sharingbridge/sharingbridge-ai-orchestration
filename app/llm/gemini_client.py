@@ -10,6 +10,7 @@ import httpx
 from ..config import settings
 from ..service_log import log_info
 from .json_utils import parse_json_object
+from .safety import CONTENT_SAFETY_RULES
 
 logger = logging.getLogger("ai-orchestration")
 
@@ -18,13 +19,18 @@ class GeminiClientError(Exception):
     pass
 
 
-VISION_SYSTEM = """You describe reference photos for meal handover couriers.
+VISION_SYSTEM = f"""You describe reference photos for meal handover couriers.
 Rules:
 - Describe visible appearance and context only (clothing, posture, surroundings).
 - Do NOT claim legal identity, name, or certainty ("this is person X").
 - Do NOT infer medical, criminal, or immigration status.
 - Keep each field under 120 words.
-Return JSON only: {"image_description": "...", "seeker_appearance_hints": "..."}"""
+- If the image is sexual, violent, or otherwise inappropriate for meal handover,
+  refuse: return {{"image_description": "", "seeker_appearance_hints": ""}}.
+Return JSON only: {{"image_description": "...", "seeker_appearance_hints": "..."}}
+
+{CONTENT_SAFETY_RULES}
+"""
 
 # Handover photos are consent-based; relax defaults to reduce false SAFETY blocks.
 VISION_SAFETY_SETTINGS = [

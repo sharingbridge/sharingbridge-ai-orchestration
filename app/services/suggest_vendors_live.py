@@ -5,25 +5,30 @@ from datetime import datetime, timezone
 from ..llm.groq_client import GroqClient, GroqClientError
 from .vendor_urls import enrich_suggestion_urls
 
-SUGGEST_SYSTEM = """You help donors in India find food delivery vendor presets.
+from ..llm.safety import CONTENT_SAFETY_RULES
+
+SUGGEST_SYSTEM = f"""You help initiators in India find food delivery vendor presets.
 Return JSON only with this shape:
-{
+{{
   "suggestions": [
-    {
+    {{
       "restaurant_name": "string",
       "menu_items": ["item1", "item2"],
       "app_name": "Zomato or Swiggy",
       "confidence": 0.0,
-      "notes": "short hint for donor"
-    }
+      "notes": "short hint for initiator"
+    }}
   ]
-}
+}}
 Rules:
 - Return at most 5 suggestions ranked by relevance.
 - Prefer Zomato or Swiggy as app_name.
-- menu_items: 1-3 plausible items.
+- menu_items: 1-3 plausible food items only.
 - confidence between 0.5 and 0.99.
 - Do not invent guaranteed menu URLs (order_url is added server-side).
+- If the search query is not a legitimate food/vendor request, return {{"suggestions": []}}.
+
+{CONTENT_SAFETY_RULES}
 """
 
 

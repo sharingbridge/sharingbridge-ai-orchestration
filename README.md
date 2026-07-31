@@ -6,9 +6,9 @@
 
 This service exposes **internal** HTTP routes called by `sharingbridge-integration-service`. Mobile apps never call it directly.
 
-**MVP behavior:** `AI_LLM_MODE=passthrough` (default) echoes the user's search text / assembles instruction text from request fields — **no invented vendor catalog**. Hardcoded sample restaurants exist only in unit-test fixtures.
+**MVP behavior:** `AI_LLM_MODE=live` (required). Suggest-vendors and instruction-pack call Groq/Gemini. If the LLM is down or mode is not live, the API returns **503** — raw user text is **not** echoed. User input is checked for inappropriate content (**400** if blocked). System prompts include shared content-safety rules.
 
-**Live LLM:** `AI_LLM_MODE=live` with **Gemini** (reference-photo vision) and **Groq** (text). See [ai-setup-handhold.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/ai-setup-handhold.md).
+**Live LLM:** Groq (text) + Gemini (vision). See [ai-setup-handhold.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/ai-setup-handhold.md).
 
 ## Endpoints
 
@@ -54,7 +54,7 @@ Leave that window open while integration-service runs with `AI_ORCHESTRATION_BAS
 |----------|-------------|
 | `PORT` | Listen port (default `8091`) |
 | `AI_ORCHESTRATION_INTERNAL_API_KEY` | Static API key shared with integration-service |
-| `AI_LLM_MODE` | `passthrough` (default) or `live` (`deterministic` = legacy alias of passthrough) |
+| `AI_LLM_MODE` | `live` (required for these routes; non-live fails closed) |
 | `GROQ_API_KEY` / `GROQ_MODEL` | Text: suggest-vendors + instruction compose |
 | `GEMINI_API_KEY` / `GEMINI_VISION_MODEL` | Vision: reference photo (`gemini-2.5-flash`) |
 | `NOMINATIM_USER_AGENT` | Reverse geocode User-Agent (no API key) |

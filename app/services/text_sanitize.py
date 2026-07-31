@@ -1,18 +1,13 @@
+"""Handover-note helpers — prefer reject_if_unsafe for fail-closed gates."""
+
 from __future__ import annotations
 
-import re
-
-# MVP policy pass — expand with moderation service later.
-_BLOCKED_PATTERNS = [
-    re.compile(r"\b(kill|murder|rape)\b", re.IGNORECASE),
-]
+from ..llm.safety import UnsafeContentError, reject_if_unsafe
 
 
 def sanitize_handover_notes(text: str) -> str:
-    """People-friendly handover line for couriers (strips unsafe terms for MVP)."""
-    cleaned = " ".join((text or "").split()).strip()
-    if not cleaned:
-        return ""
-    for pattern in _BLOCKED_PATTERNS:
-        cleaned = pattern.sub("[removed]", cleaned)
-    return cleaned
+    """Clean whitespace; raise UnsafeContentError if blocked terms are present."""
+    return reject_if_unsafe(text, field="verbal_handover_notes")
+
+
+__all__ = ["sanitize_handover_notes", "UnsafeContentError", "reject_if_unsafe"]

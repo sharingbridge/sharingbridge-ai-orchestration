@@ -1,87 +1,39 @@
 from __future__ import annotations
 
 import logging
-import uuid
-from datetime import datetime, timezone
 
 from ..config import settings
+from ..llm.safety import LlmUnavailableError, UnsafeContentError, reject_if_unsafe
 from ..service_log import log_warn
-from .program_reference import program_intro_line
-from .text_sanitize import sanitize_handover_notes
 
 logger = logging.getLogger("ai-orchestration")
 
 
 def build_instruction_pack_response(payload: dict) -> dict:
-    if settings.live_llm_enabled():
-        try:
-            from .instruction_pack_live import build_live_instruction_pack_response
+    """Live Groq/Gemini only — never assemble raw user notes when the LLM is down."""
+    if not settings.live_llm_enabled():
+        raise LlmUnavailableError(
+            "AI_LLM_MODE must be live. Raw user-text passthrough is disabled."
+        )
+    if not settings.groq_configured():
+        raise LlmUnavailableError(
+            "GROQ_API_KEY is required for live instruction-pack."
+        )
 
-            return build_live_instruction_pack_response(payload)
-        except Exception as exc:
-            log_warn(
-                logger,
-                "[instruction-pack] live path failed, using passthrough from user input: %s",
-                exc,
-            )
-
-    return _build_passthrough_instruction_pack(payload)
-
-
-def _build_passthrough_instruction_pack(payload: dict) -> dict:
-    """Assemble courier text from request fields only — no invented content."""
-    verbal = sanitize_handover_notes((payload.get("verbal_handover_notes") or "").strip())
-    has_photo = bool(payload.get("has_reference_photo"))
-    photo_id = payload.get("reference_photo_artifact_id")
-    lat = payload.get("lat")
-    lng = payload.get("lng")
-    location_label = (payload.get("location_label") or "").strip()
-    donor = (payload.get("donor_display_name") or "the donor").strip()
-    seeker = (payload.get("seeker_display_name") or "the person receiving help").strip()
-
-    geo_line = "Location: confirm with recipient; coordinates not provided."
-    if lat is not None and lng is not None:
-        label = f" ({location_label})" if location_label else ""
-        geo_line = f"Location: {lat}, {lng}{label}"
-
-    photo_line = "Reference photo: not provided."
-    if has_photo:
-        if photo_id:
-            photo_line = f"Reference photo: see secure link {photo_id} (time-limited)."
-        else:
-            photo_line = "Reference photo: available to delivery partner per app policy."
-
-    lines = [
-        program_intro_line(settings.website_url),
-        "",
-        photo_line,
-        geo_line,
-    ]
-
-    if verbal:
-        lines.extend(["", f"Handover notes: {verbal}"])
-
-    lines.extend(
-        [
-            "",
-            "Additional details:",
-            "",
-            "",
-            f"Please deliver to the location above. Identify {seeker} using the handover notes",
-            f"and reference photo only with their consent. This order was placed by {donor} for them.",
-            "Hand over the package and confirm delivery in the vendor app.",
-        ]
+    verbal = reject_if_unsafe(
+        str(payload.get("verbal_handover_notes") or ""),
+        field="verbal_handover_notes",
     )
+    safe_payload = {**payload, "verbal_handover_notes": verbal}
 
-    narrative = "\n".join(lines)
+    try:
+        from .instruction_pack_live import build_live_instruction_pack_response
 
-    pack_id = str(uuid.uuid4())
-    return {
-        "pack_id": pack_id,
-        "delivery_instructions": narrative.strip(),
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source": "passthrough",
-        "donor_display_name": donor,
-        "seeker_display_name": seeker,
-        "secure_photo_url": None,
-    }
+        return build_live_instruction_pack_response(safe_payload)
+    except (LlmUnavailableError, UnsafeContentError):
+        raise
+    except Exception as exc:
+        log_warn(logger, "[instruction-pack] live path failed (fail-closed): %s", exc)
+        raise LlmUnavailableError(
+            f"Live instruction-pack failed: {exc}"
+        ) from exc

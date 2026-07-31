@@ -1,5 +1,8 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from app.llm.safety import LlmUnavailableError, UnsafeContentError, reject_if_unsafe
 from app.services.instruction_pack import build_instruction_pack_response
 from app.services.suggest_vendors import build_suggest_vendors_response
 
@@ -27,13 +30,14 @@ def test_groq_suggest_vendors_live_mode():
     }
 
     with patch("app.config.settings.live_llm_enabled", return_value=True):
-        with patch(
-            "app.services.suggest_vendors_live.build_groq_suggest_vendors_response",
-            return_value=mock_result,
-        ) as groq_build:
-            result = build_suggest_vendors_response(payload)
+        with patch("app.config.settings.groq_configured", return_value=True):
+            with patch(
+                "app.services.suggest_vendors.build_groq_suggest_vendors_response",
+                return_value=mock_result,
+            ) as groq_build:
+                result = build_suggest_vendors_response(payload)
 
-    groq_build.assert_called_once_with(payload)
+    groq_build.assert_called_once()
     assert result["source"] == "groq"
     assert result["suggestions"][0]["restaurant_name"] == "Murugan Idli Shop"
 
@@ -57,32 +61,52 @@ def test_instruction_pack_live_mode():
     }
 
     with patch("app.config.settings.live_llm_enabled", return_value=True):
-        with patch(
-            "app.services.instruction_pack_live.build_live_instruction_pack_response",
-            return_value=mock_result,
-        ) as live_build:
-            result = build_instruction_pack_response(payload)
+        with patch("app.config.settings.groq_configured", return_value=True):
+            with patch(
+                "app.services.instruction_pack_live.build_live_instruction_pack_response",
+                return_value=mock_result,
+            ) as live_build:
+                result = build_instruction_pack_response(payload)
 
-    live_build.assert_called_once_with(payload)
+    live_build.assert_called_once()
     assert result["source"] == "groq+gemini"
     assert "Near the gate" in result["delivery_instructions"]
 
 
-def test_live_mode_falls_back_to_passthrough_on_error():
+def test_live_mode_fails_closed_when_llm_down():
     payload = {
         "query_text": "zomato meals",
         "location_precision": "manual",
         "manual_area": "Chennai",
     }
     with patch("app.config.settings.live_llm_enabled", return_value=True):
-        with patch(
-            "app.services.suggest_vendors_live.build_groq_suggest_vendors_response",
-            side_effect=RuntimeError("groq down"),
-        ):
-            result = build_suggest_vendors_response(payload)
-    assert result["source"] == "passthrough"
-    assert len(result["suggestions"]) == 1
-    assert result["suggestions"][0]["restaurant_name"] == "zomato meals"
+        with patch("app.config.settings.groq_configured", return_value=True):
+            with patch(
+                "app.services.suggest_vendors.build_groq_suggest_vendors_response",
+                side_effect=RuntimeError("groq down"),
+            ):
+                with pytest.raises(LlmUnavailableError):
+                    build_suggest_vendors_response(payload)
+
+
+def test_non_live_mode_fails_closed():
+    with patch("app.config.settings.live_llm_enabled", return_value=False):
+        with pytest.raises(LlmUnavailableError):
+            build_suggest_vendors_response({"query_text": "idli"})
+
+
+def test_reject_if_unsafe_blocks_inappropriate_query():
+    with pytest.raises(UnsafeContentError):
+        reject_if_unsafe("kill everyone near the stall", field="query_text")
+
+
+def test_suggest_rejects_unsafe_query_before_llm():
+    with patch("app.config.settings.live_llm_enabled", return_value=True):
+        with patch("app.config.settings.groq_configured", return_value=True):
+            with pytest.raises(UnsafeContentError):
+                build_suggest_vendors_response(
+                    {"query_text": "porn restaurant near me"}
+                )
 
 
 def test_groq_client_chat_json_parses_response():

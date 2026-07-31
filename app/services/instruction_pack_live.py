@@ -13,26 +13,30 @@ from ..llm.groq_client import GroqClient, GroqClientError
 from ..service_log import log_info, log_warn
 from .program_reference import program_intro_line
 from .text_sanitize import sanitize_handover_notes
+from ..llm.safety import CONTENT_SAFETY_RULES
 
 logger = logging.getLogger("ai-orchestration")
 
-COMPOSE_SYSTEM = """You write courier-facing meal handover instructions for SharingBridge.
+COMPOSE_SYSTEM = f"""You write courier-facing meal handover instructions for SharingBridge.
 Return JSON only:
-{
+{{
   "location_description": "readable place line",
   "seeker_handover_hints": "2-4 sentences, consent-based, non-definitive identification",
   "delivery_instructions": "full multiline courier text"
-}
+}}
 
 Rules for delivery_instructions:
 - Start with the exact program_intro line provided (first line).
 - Include reference photo summary when image_description is provided.
 - Include location_description and coordinates when provided.
-- Include donor handover notes when provided.
+- Include donor handover notes when provided — only if they are appropriate for a courier.
 - Include seeker_handover_hints as a clear section.
 - End with dignified handover steps (confirm consent, hand over package, confirm in vendor app).
 - Do NOT include vendor preset names, menu items, or order URLs.
 - Do NOT claim legal identity of the recipient.
+- If handover notes are inappropriate, omit them and write a short neutral handover instead.
+
+{CONTENT_SAFETY_RULES}
 """
 
 
