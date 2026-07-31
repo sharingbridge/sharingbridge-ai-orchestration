@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 import re
+
+logger = logging.getLogger(__name__)
+
+# Client-facing only — never interpolate field names or user text.
+_USER_UNSAFE_MESSAGE = "This content cannot be processed."
 
 
 class UnsafeContentError(ValueError):
     """User-provided text is not allowed for meal-handover flows."""
 
-    def __init__(self, message: str = "Input contains inappropriate content.") -> None:
+    def __init__(self, message: str = _USER_UNSAFE_MESSAGE) -> None:
         super().__init__(message)
 
 
@@ -44,13 +50,16 @@ _BLOCKED_PATTERNS = [
 
 
 def reject_if_unsafe(text: str, *, field: str = "input") -> str:
-    """Return cleaned text, or raise UnsafeContentError if blocked terms remain."""
+    """Return cleaned text, or raise UnsafeContentError if blocked terms remain.
+
+    ``field`` is for server logs only — never included in the client-facing message,
+    and the rejected text is never echoed.
+    """
     cleaned = " ".join((text or "").split()).strip()
     if not cleaned:
         return ""
     for pattern in _BLOCKED_PATTERNS:
         if pattern.search(cleaned):
-            raise UnsafeContentError(
-                f"{field} contains inappropriate content and cannot be processed."
-            )
+            logger.info("Rejected unsafe content for field=%s", field)
+            raise UnsafeContentError()
     return cleaned
