@@ -21,14 +21,15 @@ def build_instruction_pack_response(payload: dict) -> dict:
         except Exception as exc:
             log_warn(
                 logger,
-                "[instruction-pack] live path failed, using deterministic fallback: %s",
+                "[instruction-pack] live path failed, using passthrough from user input: %s",
                 exc,
             )
 
-    return _build_deterministic_instruction_pack(payload)
+    return _build_passthrough_instruction_pack(payload)
 
 
-def _build_deterministic_instruction_pack(payload: dict) -> dict:
+def _build_passthrough_instruction_pack(payload: dict) -> dict:
+    """Assemble courier text from request fields only — no invented content."""
     verbal = sanitize_handover_notes((payload.get("verbal_handover_notes") or "").strip())
     has_photo = bool(payload.get("has_reference_photo"))
     photo_id = payload.get("reference_photo_artifact_id")
@@ -79,7 +80,7 @@ def _build_deterministic_instruction_pack(payload: dict) -> dict:
         "pack_id": pack_id,
         "delivery_instructions": narrative.strip(),
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source": "deterministic",
+        "source": "passthrough",
         "donor_display_name": donor,
         "seeker_display_name": seeker,
         "secure_photo_url": None,

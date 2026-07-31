@@ -15,7 +15,7 @@ class SuggestVendorsRequest(BaseModel):
 class SuggestVendorsResponse(BaseModel):
     suggestions: List[Dict[str, Any]]
     generated_at: str
-    source: str = "deterministic"
+    source: str = "passthrough"
 
 
 class InstructionPackPreset(BaseModel):

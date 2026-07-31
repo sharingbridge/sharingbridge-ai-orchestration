@@ -6,7 +6,7 @@
 
 This service exposes **internal** HTTP routes called by `sharingbridge-integration-service`. Mobile apps never call it directly.
 
-**MVP behavior:** `AI_LLM_MODE=deterministic` (default) returns query-ranked vendor suggestions and policy-aligned instruction packs without calling a model provider.
+**MVP behavior:** `AI_LLM_MODE=passthrough` (default) echoes the user's search text / assembles instruction text from request fields — **no invented vendor catalog**. Hardcoded sample restaurants exist only in unit-test fixtures.
 
 **Live LLM:** `AI_LLM_MODE=live` with **Gemini** (reference-photo vision) and **Groq** (text). See [ai-setup-handhold.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/ai-setup-handhold.md).
 
@@ -54,7 +54,7 @@ Leave that window open while integration-service runs with `AI_ORCHESTRATION_BAS
 |----------|-------------|
 | `PORT` | Listen port (default `8091`) |
 | `AI_ORCHESTRATION_INTERNAL_API_KEY` | Static API key shared with integration-service |
-| `AI_LLM_MODE` | `deterministic` (default) or `live` |
+| `AI_LLM_MODE` | `passthrough` (default) or `live` (`deterministic` = legacy alias of passthrough) |
 | `GROQ_API_KEY` / `GROQ_MODEL` | Text: suggest-vendors + instruction compose |
 | `GEMINI_API_KEY` / `GEMINI_VISION_MODEL` | Vision: reference photo (`gemini-2.5-flash`) |
 | `NOMINATIM_USER_AGENT` | Reverse geocode User-Agent (no API key) |

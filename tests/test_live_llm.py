@@ -68,7 +68,7 @@ def test_instruction_pack_live_mode():
     assert "Near the gate" in result["delivery_instructions"]
 
 
-def test_live_mode_falls_back_to_deterministic_on_error():
+def test_live_mode_falls_back_to_passthrough_on_error():
     payload = {
         "query_text": "zomato meals",
         "location_precision": "manual",
@@ -80,8 +80,9 @@ def test_live_mode_falls_back_to_deterministic_on_error():
             side_effect=RuntimeError("groq down"),
         ):
             result = build_suggest_vendors_response(payload)
-    assert result["source"] == "deterministic"
-    assert len(result["suggestions"]) <= 5
+    assert result["source"] == "passthrough"
+    assert len(result["suggestions"]) == 1
+    assert result["suggestions"][0]["restaurant_name"] == "zomato meals"
 
 
 def test_groq_client_chat_json_parses_response():
