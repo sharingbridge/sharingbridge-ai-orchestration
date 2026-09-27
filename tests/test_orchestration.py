@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -26,21 +28,50 @@ def test_vendor_search_urls():
 
 
 def test_suggest_vendors_ranks_by_query():
-    response = client.post(
-        "/internal/v1/llm/suggest-vendors",
-        json={
-            "query_text": "swiggy dosa",
-            "location_precision": "gps",
-            "lat": 12.97,
-            "lng": 80.22,
-            "manual_area": "Chennai",
-        },
-    )
+    mock_result = {
+        "suggestions": [
+            {
+                "restaurant_name": "Murugan Idli Shop",
+                "menu_items": ["Dosa"],
+                "app_name": "Swiggy",
+                "order_url": "https://www.swiggy.com/search?query=Murugan+Idli+Shop",
+                "confidence": 0.9,
+                "notes": "Pick nearest outlet",
+            },
+            {
+                "restaurant_name": "Ratna Cafe",
+                "menu_items": ["Filter Coffee"],
+                "app_name": "Zomato",
+                "order_url": "https://www.zomato.com/chennai/restaurants?q=Ratna+Cafe",
+                "confidence": 0.85,
+                "notes": "Breakfast option",
+            },
+        ],
+        "generated_at": "2026-09-27T00:00:00+00:00",
+        "source": "groq",
+    }
+    with patch("app.config.settings.live_llm_enabled", return_value=True), patch(
+        "app.config.settings.groq_configured", return_value=True
+    ), patch(
+        "app.services.suggest_vendors.build_groq_suggest_vendors_response",
+        return_value=mock_result,
+    ):
+        response = client.post(
+            "/internal/v1/llm/suggest-vendors",
+            json={
+                "query_text": "swiggy dosa",
+                "location_precision": "gps",
+                "lat": 12.97,
+                "lng": 80.22,
+                "manual_area": "Chennai",
+            },
+        )
     assert response.status_code == 200
     body = response.json()
+    assert body["source"] == "groq"
     assert len(body["suggestions"]) <= 5
     names = [s["restaurant_name"] for s in body["suggestions"]]
-    assert "Ratna Cafe" in names or "Saravana Bhavan" in names
+    assert "Ratna Cafe" in names or "Murugan Idli Shop" in names
     for item in body["suggestions"]:
         assert "swiggy.com" in item["order_url"] or "zomato.com" in item["order_url"]
 
@@ -57,20 +88,39 @@ def test_program_intro_real_url():
 
 
 def test_instruction_pack_courier_facing_only():
-    response = client.post(
-        "/internal/v1/llm/instruction-pack",
-        json={
-            "verbal_handover_notes": "Blue shirt near the gate",
-            "has_reference_photo": True,
-            "presets": [
-                {
-                    "restaurant_name": "Cafe X",
-                    "menu_items": ["Coffee"],
-                    "app_name": "Swiggy",
-                }
-            ],
-        },
-    )
+    mock_result = {
+        "pack_id": "pack-test-1",
+        "delivery_instructions": (
+            "SharingBridge meal handover (site not published yet).\n\n"
+            "Handover notes: Blue shirt near the gate\n\n"
+            "Additional details: Look for the blue shirt near the gate."
+        ),
+        "generated_at": "2026-09-27T00:00:00+00:00",
+        "source": "groq",
+        "image_description": None,
+        "seeker_handover_hints": "Look for blue shirt near gate",
+        "location_description": None,
+    }
+    with patch("app.config.settings.live_llm_enabled", return_value=True), patch(
+        "app.config.settings.groq_configured", return_value=True
+    ), patch(
+        "app.services.instruction_pack_live.build_live_instruction_pack_response",
+        return_value=mock_result,
+    ):
+        response = client.post(
+            "/internal/v1/llm/instruction-pack",
+            json={
+                "verbal_handover_notes": "Blue shirt near the gate",
+                "has_reference_photo": True,
+                "presets": [
+                    {
+                        "restaurant_name": "Cafe X",
+                        "menu_items": ["Coffee"],
+                        "app_name": "Swiggy",
+                    }
+                ],
+            },
+        )
     assert response.status_code == 200
     body = response.json()
     text = body["delivery_instructions"]
