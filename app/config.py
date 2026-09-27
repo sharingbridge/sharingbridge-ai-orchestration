@@ -17,8 +17,9 @@ class Settings:
         # Production requires live. passthrough/deterministic no longer serve raw user text.
         # Groq — text: presets + instruction compose
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
+        # llama-3.3-70b-versatile shut down on Groq free/dev tiers 2026-08-16.
         self.groq_model = os.getenv(
-            "GROQ_MODEL", "llama-3.3-70b-versatile"
+            "GROQ_MODEL", "openai/gpt-oss-120b"
         ).strip()
         self.groq_base_url = os.getenv(
             "GROQ_BASE_URL", "https://api.groq.com/openai/v1"
