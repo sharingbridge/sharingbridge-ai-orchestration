@@ -42,6 +42,7 @@ class GroqClient:
         user: str,
         json_mode: bool = False,
         temperature: float = 0.3,
+        response_format: dict[str, Any] | None = None,
     ) -> str:
         if not self.configured():
             raise GroqClientError("GROQ_API_KEY is not set")
@@ -54,10 +55,19 @@ class GroqClient:
             ],
             "temperature": temperature,
         }
-        if json_mode:
-            body["response_format"] = {"type": "json_object"}
+        fmt = response_format
+        if fmt is None and json_mode:
+            fmt = {"type": "json_object"}
+        if fmt is not None:
+            body["response_format"] = fmt
 
-        log_info(logger, "[groq] chat request model=%s json=%s", self.model, json_mode)
+        fmt_type = (fmt or {}).get("type", "text")
+        log_info(
+            logger,
+            "[groq] chat request model=%s response_format=%s",
+            self.model,
+            fmt_type,
+        )
         response = None
         with httpx.Client(timeout=self.timeout_s) as client:
             for attempt in range(3):
@@ -88,12 +98,30 @@ class GroqClient:
             raise GroqClientError("Groq returned empty content")
         return content.strip()
 
-    def chat_json(self, *, system: str, user: str, temperature: float = 0.3) -> dict[str, Any]:
+    def chat_json(
+        self,
+        *,
+        system: str,
+        user: str,
+        temperature: float = 0.3,
+        json_schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        response_format: dict[str, Any] | None = None
+        if json_schema is not None:
+            response_format = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": str(json_schema.get("name") or "response"),
+                    "strict": bool(json_schema.get("strict", True)),
+                    "schema": json_schema["schema"],
+                },
+            }
         text = self.chat(
             system=system,
             user=user,
-            json_mode=True,
+            json_mode=json_schema is None,
             temperature=temperature,
+            response_format=response_format,
         )
         try:
             return parse_json_object(text)

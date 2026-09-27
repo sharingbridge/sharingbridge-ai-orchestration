@@ -125,3 +125,48 @@ def test_groq_client_chat_json_parses_response():
         parsed = client.chat_json(system="sys", user="user")
 
     assert parsed == {"ok": True}
+    body = instance.post.call_args.kwargs["json"]
+    assert body["response_format"] == {"type": "json_object"}
+
+
+def test_groq_client_chat_json_uses_json_schema_when_provided():
+    from app.llm.groq_client import GroqClient
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": '{"suggestions": []}'}}]
+    }
+    schema = {
+        "name": "suggest_vendors",
+        "strict": True,
+        "schema": {"type": "object", "properties": {}, "required": []},
+    }
+
+    client = GroqClient(api_key="test-key")
+    with patch("httpx.Client") as client_cls:
+        instance = client_cls.return_value.__enter__.return_value
+        instance.post.return_value = mock_response
+        parsed = client.chat_json(system="sys", user="user", json_schema=schema)
+
+    assert parsed == {"suggestions": []}
+    body = instance.post.call_args.kwargs["json"]
+    assert body["response_format"]["type"] == "json_schema"
+    assert body["response_format"]["json_schema"]["name"] == "suggest_vendors"
+
+
+def test_suggest_vendors_empty_list_is_live_success_not_error():
+    from app.services.suggest_vendors_live import build_groq_suggest_vendors_response
+
+    with patch("app.services.suggest_vendors_live.GroqClient") as groq_cls:
+        groq_cls.return_value.chat_json.return_value = {"suggestions": []}
+        result = build_groq_suggest_vendors_response(
+            {"query_text": "xyz", "location_precision": "unspecified"}
+        )
+
+    assert result["source"] == "groq"
+    assert result["suggestions"] == []
+    groq_cls.return_value.chat_json.assert_called_once()
+    kwargs = groq_cls.return_value.chat_json.call_args.kwargs
+    assert "json_schema" in kwargs
+    assert kwargs["json_schema"]["name"] == "suggest_vendors"
